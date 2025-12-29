@@ -1,0 +1,22 @@
+class Person:
+    def __init__(self, nama, umur):
+        self.nama = nama
+        self.umur = umur
+
+    def info(self):
+        return f"Nama: {self.nama}, Umur: {self.umur} tahun"
+
+
+class Mahasiswa(Person):
+    def __init__(self, nama, umur, nim):
+        super().__init__(nama, umur)  
+        self.nim = nim
+
+    def info(self):
+        return f"Nama: {self.nama}, Umur: {self.umur} tahun, NIM: {self.nim}"
+
+p1 = Person("alya", 25)
+m1 = Mahasiswa("bintang", 20, "202212077")
+
+print(p1.info())
+print(m1.info())
