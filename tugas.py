@@ -1,108 +1,136 @@
-from abc import ABC, abstractmethod
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
 
-# ========================================================
-# 1. ABSTRACTION 
-# ========================================================
-class Pengguna(ABC):          
-    def __init__(self, nama):
+class Mahasiswa:
+    def __init__(self, nim, nama, jurusan, ipk):
+        self.nim = nim
         self.nama = nama
+        self.jurusan = jurusan
+        self.ipk = float(ipk)
 
-    @abstractmethod         
-    def akses(self):
-        pass
+    def info(self):
+        return f"{self.nim} - {self.nama} - {self.jurusan} - {self.ipk}"
 
-# ========================================================
-# 4. CUSTOM EXCEPTION  
-# ========================================================
-class PoinTidakValidError(Exception):     
-    """Error ketika poin tidak valid (negatif atau bukan angka)."""
-    pass
-
-# ========================================================
-# CLASS MEMBER → IMPLEMENTASI ABSTRAKSI + SPECIAL METHODS
-# ========================================================
-class Member(Pengguna):        
-    def __init__(self, nama, poin):
-        super().__init__(nama)
-        self.poin = poin
-
-    # Implementasi abstract method  
-    def akses(self):
-        return f"Member {self.nama} memiliki hak akses penuh."
-
-    # ====================================================
-    # 2. SPECIAL METHODS 
-    # ====================================================
-    def __str__(self):        
-        return f"Member: {self.nama} - Poin: {self.poin}"
-
-    def __add__(self, other): 
-        if not isinstance(other, Member):
-            raise TypeError("Penjumlahan harus antar Member.")
-        return self.poin + other.poin
-
-    def __len__(self):         
-        return len(self.nama)
+    def update_ipk(self, ipk_baru):
+        self.ipk = float(ipk_baru)
 
 
-# ========================================================
-# 3. EXCEPTION HANDLING INPUT POIN  
-# ========================================================
-def input_poin():              
-    while True:
-        try:
-            poin_text = input("Masukkan poin member: ").strip()
+class AplikasiMahasiswa:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Manajemen Mahasiswa")
+        self.root.geometry("700x450")
 
-            if poin_text == "":
-                print("Error: Input tidak boleh kosong!")
-                continue
+        self.data_mahasiswa = {}
 
-            if not poin_text.isdigit():
-                raise ValueError("Poin harus berupa angka!")
+        frame_input = tk.Frame(root, padx=10, pady=10)
+        frame_input.pack()
 
-            poin = int(poin_text)
+        tk.Label(frame_input, text="NIM").grid(row=0, column=0, sticky=tk.W)
+        tk.Label(frame_input, text="Nama").grid(row=1, column=0, sticky=tk.W)
+        tk.Label(frame_input, text="Jurusan").grid(row=2, column=0, sticky=tk.W)
+        tk.Label(frame_input, text="IPK").grid(row=3, column=0, sticky=tk.W)
 
-            if poin < 0:
-                raise PoinTidakValidError("Poin tidak boleh bernilai negatif!")
+        self.entry_nim = tk.Entry(frame_input, width=30)
+        self.entry_nama = tk.Entry(frame_input, width=30)
+        self.entry_jurusan = tk.Entry(frame_input, width=30)
+        self.entry_ipk = tk.Entry(frame_input, width=30)
 
-            return poin
+        self.entry_nim.grid(row=0, column=1)
+        self.entry_nama.grid(row=1, column=1)
+        self.entry_jurusan.grid(row=2, column=1)
+        self.entry_ipk.grid(row=3, column=1)
 
-        except ValueError as ve:                   
-            print("Error:", ve)
-        except PoinTidakValidError as pe:           
-            print("Error:", pe)
+        frame_btn = tk.Frame(root, pady=10)
+        frame_btn.pack()
 
-# ========================================================
-# 5. PROGRAM UTAMA 
-# ========================================================
+        tk.Button(frame_btn, text="Tambah", command=self.tambah).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame_btn, text="Update IPK", command=self.update).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame_btn, text="Hapus", command=self.hapus).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame_btn, text="Cari", command=self.cari).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame_btn, text="Filter Jurusan", command=self.filter_jurusan).pack(side=tk.LEFT, padx=5)
+
+        self.tree = ttk.Treeview(
+            root,
+            columns=("NIM", "Nama", "Jurusan", "IPK"),
+            show="headings"
+        )
+        for col in ("NIM", "Nama", "Jurusan", "IPK"):
+            self.tree.heading(col, text=col)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
+        frame_extra = tk.Frame(root, pady=5)
+        frame_extra.pack()
+
+        tk.Button(frame_extra, text="Rata-rata IPK", command=self.rata_ipk).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame_extra, text="IPK Tertinggi", command=self.ipk_tertinggi).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame_extra, text="Export TXT", command=self.export).pack(side=tk.LEFT, padx=5)
+
+    def refresh_tree(self, data=None):
+        self.tree.delete(*self.tree.get_children())
+        sumber = data if data else self.data_mahasiswa.values()
+        for mhs in sumber:
+            self.tree.insert("", tk.END, values=(mhs.nim, mhs.nama, mhs.jurusan, mhs.ipk))
+
+    def tambah(self):
+        nim = self.entry_nim.get()
+        nama = self.entry_nama.get()
+        jurusan = self.entry_jurusan.get()
+        ipk = self.entry_ipk.get()
+
+        if not (nim and nama and jurusan and ipk):
+            messagebox.showwarning("Peringatan", "Semua field harus diisi!")
+            return
+
+        self.data_mahasiswa[nim] = Mahasiswa(nim, nama, jurusan, ipk)
+        self.refresh_tree()
+
+    def update(self):
+        nim = self.entry_nim.get()
+        ipk = self.entry_ipk.get()
+        if nim in self.data_mahasiswa:
+            self.data_mahasiswa[nim].update_ipk(ipk)
+            self.refresh_tree()
+
+    def hapus(self):
+        selected = self.tree.selection()
+        if selected:
+            nim = self.tree.item(selected[0])["values"][0]
+            del self.data_mahasiswa[nim]
+            self.refresh_tree()
+
+    def cari(self):
+        keyword = self.entry_nim.get()
+        hasil = [
+            mhs for mhs in self.data_mahasiswa.values()
+            if keyword.lower() in mhs.nim.lower() or keyword.lower() in mhs.nama.lower()
+        ]
+        self.refresh_tree(hasil)
+
+    def filter_jurusan(self):
+        jur = self.entry_jurusan.get()
+        hasil = [mhs for mhs in self.data_mahasiswa.values()
+                 if mhs.jurusan.lower() == jur.lower()]
+        self.refresh_tree(hasil)
+
+    def rata_ipk(self):
+        if self.data_mahasiswa:
+            rata = sum(m.ipk for m in self.data_mahasiswa.values()) / len(self.data_mahasiswa)
+            messagebox.showinfo("Rata-rata IPK", f"{rata:.2f}")
+
+    def ipk_tertinggi(self):
+        if self.data_mahasiswa:
+            mhs = max(self.data_mahasiswa.values(), key=lambda x: x.ipk)
+            messagebox.showinfo("IPK Tertinggi", mhs.info())
+    def export(self):
+        file = filedialog.asksaveasfilename(defaultextension=".txt")
+        if file:
+            with open(file, "w") as f:
+                for mhs in self.data_mahasiswa.values():
+                    f.write(mhs.info() + "\n")
+
+
 if __name__ == "__main__":
-    print("=== INPUT MEMBER 1 ===")
-    nama1 = input("Masukkan nama member 1: ")
-    poin1 = input_poin()
-    m1 = Member(nama1, poin1)
-
-    print("\n=== INPUT MEMBER 2 ===")
-    nama2 = input("Masukkan nama member 2: ")
-    poin2 = input_poin()
-    m2 = Member(nama2, poin2)
-
-    print("\n=== HASIL PROGRAM ===")
-
-    print("\n1) Info Member:")
-    print(m1)
-    print(m2)
-
-    print("\n2) Jumlah Poin (m1 + m2):", m1 + m2)
-    print("\n3) Panjang nama member 1:", len(m1))
-
-    print("\n4) Hak akses:")
-    print(m1.akses())
-    print(m2.akses())
-
-    print("\n5) Uji poin negatif:")
-    try:
-        test_negatif = Member("Uji", -5)
-        if test_negatif.poin < 0:
-            raise PoinTidakValidError("Poin tidak boleh negatif!")
-    except PoinTidakValidError as e:
-        print("Berhasil menangkap error:", e)
+    root = tk.Tk()
+    app = AplikasiMahasiswa(root)
+    root.mainloop()
