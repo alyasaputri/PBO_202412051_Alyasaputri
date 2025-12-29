@@ -1,9 +1,9 @@
 class Student:
     def __init__(self, sid, name, gpa=0.0):
-        self.sid = sid         # public
-        self.name = name       # public
-        self._credits = 0      # protected
-        self.__gpa = gpa       # private
+        self.sid = sid
+        self.name = name
+        self._credits = 0
+        self.__gpa = gpa
 
     def get_gpa(self):
         return self.__gpa
@@ -18,6 +18,15 @@ class Student:
             raise ValueError("credits tidak boleh negatif")
         self._credits += n
 
+    # method tambahan
+    def classify(self):
+        if self.__gpa >= 3.5:
+            return "Cum Laude"
+        elif self.__gpa >= 2.5:
+            return "Good"
+        else:
+            return "Remedial"
+
 
 if __name__ == "__main__":
     s = Student("S100", "Ana", 3.1)
@@ -27,3 +36,6 @@ if __name__ == "__main__":
     print(s.get_gpa())
     s.add_credits(3)
     print(s._credits)
+
+    # testing tambahan
+    print(s.classify())
